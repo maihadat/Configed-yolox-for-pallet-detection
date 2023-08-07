@@ -1,24 +1,24 @@
 ## A pytorch easy re-implement of "YOLOX: Exceeding YOLO Series in 2021"
 
-## 1. Notes
 
-    This is a pytorch easy re-implement of "YOLOX: Exceeding YOLO Series in 2021" [https://arxiv.org/abs/2107.08430]
-    The repo is still under development
-
-## 2. Environment
+## 1. Environment
 
     pytorch>=1.7.0, python>=3.6, Ubuntu/Windows, see more in 'requirements.txt'
     
-    cd /path/to/your/work
-    git clone https://github.com/zhangming8/yolox-pytorch.git
-    cd yolox-pytorch
-    download pre-train weights in Model Zoo to /path/to/your/work/weights
+    To download the requirements, just run the YOLOX.ipynb, the Requirements section
+
+## 2. Notes
+    
+    for yolox implementation in rendering pallet detections, we have implements train and predict parts in YOLOX.ipynb, 
+    all the need is to download and unzip the Data.rar from the link in the data section, and then put it in the 
+    Configed-yolox-for-pallet-detection folder(because the data is too large so we cann't put it in github repo).
+    You can see the details in the below sections.
 
 ## 3. Object Detection
 
 #### Model Zoo
 
-All weights can be downloaded
+All pretrained weights with COCO dataset can be downloaded
 from [GoogleDrive](https://drive.google.com/drive/folders/1qEMLzikH5JwRNRoHpeCa6BJBeSQ6xXCH?usp=sharing)
 or [BaiduDrive](https://pan.baidu.com/s/1UsbdnyVwRJhr9Vy1tmJLeQ) (code:bc72)
 
@@ -37,18 +37,10 @@ implement [YOLOX](https://github.com/Megvii-BaseDetection/YOLOX). You can reprod
 
 #### Dataset
 
-    download COCO:
-    http://images.cocodataset.org/zips/train2017.zip
-    http://images.cocodataset.org/zips/val2017.zip
-    http://images.cocodataset.org/annotations/annotations_trainval2017.zip
+    download Data.rar from Google Drive, this folder contains render pallet data in YOLO format, link below:
+    https://drive.google.com/file/d/1pKL2N7nAqEXMM1vB4PHgKVpkHAWCmHnl/view?usp=sharing
     
-    unzip and put COCO dataset in following folders:
-    /path/to/dataset/annotations/instances_train2017.json
-    /path/to/dataset/annotations/instances_val2017.json
-    /path/to/dataset/images/train2017/*.jpg
-    /path/to/dataset/images/val2017/*.jpg
-    
-    change opt.dataset_path = "/path/to/dataset" in 'config.py'
+    unzip and put dataset in Configed-yolox-for-pallet-detection folders.
 
 #### Train
 
@@ -62,23 +54,16 @@ implement [YOLOX](https://github.com/Megvii-BaseDetection/YOLOX). You can reprod
     c. Resume, you can use 'resume=True' when your training is accidentally stopped:
     python train.py gpus='0' backbone="CSPDarknet-s" num_epochs=300 exp_id="coco_CSPDarknet-s_640x640" use_amp=True val_intervals=2 data_num_workers=6 batch_size=48 load_model="exp/coco_CSPDarknet-s_640x640/model_last.pth" resume=True
 
-#### Some Tips:
+    In the YOLOX.ipynb file we have use finetune method to take advantage of pretrained weights from yolox-s model.
 
-    a. You can also change params in 'train.sh'(these params will replace opt.xxx in config.py) and use 'nohup sh train.sh &' to train
-    b. Multi-gpu train: set opt.gpus = "3,5,6,7" in 'config.py' or set gpus="3,5,6,7" in 'train.sh'
-    c. If you want to close multi-size training, change opt.random_size = None in 'config.py' or set random_size=None in 'train.sh'
-    d. random_size = (14, 26) means: Randomly select an integer from interval (14,26) and multiply by 32 as the input size
-    e. Visualized log by tensorboard: 
-        tensorboard --logdir exp/your_exp_id/logs_2021-08-xx-xx-xx and visit http://localhost:6006
-       Your can also use the following shell scripts:
-        (1) grep 'train epoch' exp/your_exp_id/logs_2021-08-xx-xx-xx/log.txt
-        (2) grep 'val epoch' exp/your_exp_id/logs_2021-08-xx-xx-xx/log.txt
 
 #### Evaluate
 
     Module weights will be saved in './exp/your_exp_id/model_xx.pth'
     change 'load_model'='weight/path/to/evaluate.pth' and backbone='backbone-type' in 'evaluate.sh'
     sh evaluate.sh
+
+    We also implement some chart drawing and iou, confidents calculating in YOLOX.ipynb
 
 #### Predict/Inference/Demo
 
@@ -90,51 +75,9 @@ implement [YOLOX](https://github.com/Megvii-BaseDetection/YOLOX). You can reprod
     
     You can also change params in 'predict.sh', and use 'sh predict.sh'
 
-#### Train Customer Dataset(VOC format)
+    In the YOLOX.ipynb file we have implements predicting sections on the test data of the rendering pallets dataset.
 
-    1. put your annotations(.xml) and images(.jpg) into:
-        /path/to/voc_data/images/train2017/*.jpg  # train images
-        /path/to/voc_data/images/train2017/*.xml  # train xml annotations
-        /path/to/voc_data/images/val2017/*.jpg  # val images
-        /path/to/voc_data/images/val2017/*.xml  # val xml annotations
-
-    2. change opt.label_name = ['your', 'dataset', 'label'] in 'config.py'
-       change opt.dataset_path = '/path/to/voc_data' in 'config.py'
-
-    3. python tools/voc_to_coco.py
-       Converted COCO format annotation will be saved into:
-        /path/to/voc_data/annotations/instances_train2017.json
-        /path/to/voc_data/annotations/instances_val2017.json
-    
-    4. (Optional) you can visualize the converted annotations by:
-        python tools/show_coco_anns.py
-        Here is an analysis of the COCO annotation https://blog.csdn.net/u010397980/article/details/90341223?spm=1001.2014.3001.5501
-    
-    5. run train.sh, evaluate.sh, predict.sh (are the same as COCO)
-
-## 4. Multi/One-class Multi-object Tracking(MOT)
-
-#### one-class/single-class MOT Dataset
-
-    DOING
-
-#### Multi-class MOT Dataset
-
-    DOING
-
-#### Train
-
-    DOING
-
-#### Evaluate
-
-    DOING
-
-#### Predict/Inference/Demo
-
-    DOING
-
-## 5. Acknowledgement
+## 4. Acknowledgement
 
     https://github.com/Megvii-BaseDetection/YOLOX
     https://github.com/PaddlePaddle/PaddleDetection
